@@ -632,7 +632,83 @@ const DashboardPage: React.FC = () => {
 
         {/* Page Content */}
         <main className="px-6 pb-6 pt-6">
-          {renderContent()}
+          {/* Overview Section - Always visible */}
+          <div className="space-y-8 mb-8">
+            {/* Header com boas-vindas */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-8 text-white relative overflow-hidden">
+              <div className="absolute inset-0 bg-black/10"></div>
+              <div className="relative z-10">
+                <h1 className="text-4xl font-bold mb-2">
+                  Bem-vindo, {user?.name || 'Usuário'} ! 👋
+                </h1>
+                <p className="text-blue-100 text-lg">
+                  Você está logado como <span className="font-semibold">{userCategory === 'proprietario' ? 'Proprietário' : 'Empresa'}</span>. 
+                  Você tem acesso total a todas as funcionalidades.
+                </p>
+              </div>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-16 -translate-x-16"></div>
+            </div>
+
+            {/* Ações Rápidas e Atividades */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Ações Rápidas */}
+              <div className="card">
+                <div className="flex items-center mb-6">
+                  <Zap className="w-6 h-6 text-blue-600 mr-3" />
+                  <h2 className="text-xl font-bold text-gray-900">Ações Rápidas</h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {quickActions.map((action, index) => {
+                    const IconComponent = action.icon;
+                    return (
+                      <button
+                        key={index}
+                        onClick={action.onClick}
+                        className="p-4 rounded-xl border border-gray-200 hover:border-gray-300 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all duration-300 text-left group"
+                      >
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${action.gradient} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                          <IconComponent className="w-6 h-6 text-white" />
+                        </div>
+                        <h3 className="font-semibold text-gray-900 mb-1">{action.label}</h3>
+                        <p className="text-gray-600 text-sm">{action.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Atividades Recentes */}
+              <div className="card">
+                <div className="flex items-center mb-6">
+                  <Clock className="w-6 h-6 text-blue-600 mr-3" />
+                  <h2 className="text-xl font-bold text-gray-900">Atividades Recentes</h2>
+                </div>
+                <div className="space-y-4">
+                  {recentActivities.map((activity) => {
+                    const IconComponent = activity.icon;
+                    return (
+                      <div key={activity.id} className="activity-item">
+                        <div className={`p-2 rounded-lg bg-gray-100 ${activity.color}`}>
+                          <IconComponent className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-gray-900 font-medium">{activity.action}</p>
+                          <p className="text-gray-500 text-sm">{activity.time}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button className="w-full mt-4 py-2 px-4 text-blue-600 font-semibold hover:bg-blue-50 rounded-lg transition-colors duration-200">
+                  Ver todas as atividades
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Dynamic Content */}
+          {activeSection !== 'overview' && renderContent()}
         </main>
       </div>
 
