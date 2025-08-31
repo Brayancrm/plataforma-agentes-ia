@@ -1,0 +1,17 @@
+# 🔐 VARIÁVEIS DE AMBIENTE PARA PRODUÇÃO (Vercel)
+# Copie estas variáveis para o painel da Vercel
+
+# Google OAuth 2.0
+GOOGLE_CLIENT_ID=221105450106-9e6ktkr9pmgn353ag4nici65ivu3be02.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
+
+# Google Cloud / Vertex AI
+VERTEX_AI_PROJECT_ID=beprojects-836d6
+VERTEX_AI_LOCATION=us-central1
+
+# Segurança
+SESSION_SECRET=dati-ia-veo3-oauth-secret-key-2024
+
+# URLs de redirecionamento (adicionar no Google Cloud Console)
+# https://dati-ia.vercel.app/auth/google/callback
+# https://dati-ia-git-main-brayan.vercel.app/auth/google/callback
