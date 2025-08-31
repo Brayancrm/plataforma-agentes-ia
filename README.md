@@ -1,46 +1,244 @@
-# Getting Started with Create React App
+# 🚀 Plataforma de Agentes de IA
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Uma plataforma web completa para criação, gerenciamento e disparo de agentes de IA com dashboard administrativo e empresarial.
 
-## Available Scripts
+## ✨ Funcionalidades Principais
 
-In the project directory, you can run:
+### 🎯 **Gestão de Usuários e Empresas**
+- Sistema de autenticação com controle de acesso
+- Dashboard para Proprietário (Admin) com acesso total
+- Dashboard para Empresas com funcionalidades restritas
+- Gestão de usuários, empresas e permissões
 
-### `npm start`
+### 📊 **Gestão de Clientes**
+- Cadastro manual de clientes
+- **Importação em massa via CSV** ✅
+- Validação automática de CPF, telefone e email
+- Organização em grupos e categorias
+- Relatórios de importação com tratamento de erros
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### 🤖 **Agentes de IA**
+- Criação e configuração de agentes personalizados
+- Suporte a múltiplos canais: WhatsApp, Voz, SMS, Email
+- Integração com API da OpenAI (GPT-4/5)
+- Configuração de prompts e funções específicas
+- Modos Inbound (receber) e Outbound (enviar)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### 📢 **Campanhas e Marketing**
+- Criação de campanhas automatizadas
+- Segmentação por clientes ou grupos
+- Agendamento e disparo automático
+- Relatórios de performance
 
-### `npm test`
+### 🎨 **Publicidade com IA**
+- Geração de imagens com DALL-E
+- Geração de vídeos (quando Sora estiver disponível)
+- Galeria de conteúdos gerados
+- Prompts personalizáveis
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 📄 **Documentos e Contratos**
+- Modelos configuráveis tipo Word
+- Assinatura digital
+- Exportação em múltiplos formatos
 
-### `npm run build`
+### 📦 **Inventário e Vendas**
+- Gestão de produtos e serviços
+- Controle de estoque
+- Anexo de fotos e documentos
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 💳 **Pagamentos e Faturamento**
+- Geração de boletos e notas fiscais
+- Controle de créditos e planos
+- Histórico de transações
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 🔗 **Integrações**
+- APIs para CRMs e ERPs
+- Webhooks personalizáveis
+- Conectores para sistemas externos
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🛠️ Tecnologias Utilizadas
 
-### `npm run eject`
+- **Frontend**: React 18 + TypeScript
+- **Styling**: TailwindCSS
+- **Roteamento**: React Router v6
+- **Estado**: React Context + Hooks
+- **Ícones**: Lucide React
+- **IA**: OpenAI SDK (GPT-4, DALL-E, Sora)
+- **Validação**: Validações customizadas para CPF, telefone, email
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## 📋 Pré-requisitos
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Node.js 18+ 
+- npm ou yarn
+- Conta na OpenAI com API key
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## 🚀 Instalação
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### 1. Clone o repositório
+```bash
+git clone <url-do-repositorio>
+cd plataforma-agentes-ia
+```
 
-## Learn More
+### 2. Instale as dependências
+```bash
+npm install
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 3. Configure as variáveis de ambiente
+Crie um arquivo `.env` na raiz do projeto:
+```env
+REACT_APP_OPENAI_API_KEY=sua-api-key-da-openai-aqui
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 4. Inicie o servidor de desenvolvimento
+```bash
+npm start
+```
+
+A aplicação estará disponível em `http://localhost:3000`
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── components/          # Componentes reutilizáveis
+│   └── CSVImportComponent.tsx  # Importação CSV
+├── contexts/           # Contextos React
+│   └── AuthContext.tsx # Autenticação
+├── pages/              # Páginas da aplicação
+│   ├── LoginPage.tsx   # Página de login
+│   └── DashboardPage.tsx # Dashboard principal
+├── services/           # Serviços e APIs
+│   ├── openaiService.ts # Integração OpenAI
+│   └── csvImportService.ts # Processamento CSV
+├── types/              # Tipos TypeScript
+│   └── index.ts        # Interfaces principais
+├── utils/              # Utilitários
+├── hooks/              # Hooks customizados
+└── App.tsx             # Componente principal
+```
+
+## 🔐 Configuração da OpenAI
+
+### 1. Obtenha sua API Key
+- Acesse [OpenAI Platform](https://platform.openai.com/)
+- Crie uma conta ou faça login
+- Gere uma nova API key
+
+### 2. Configure no projeto
+```env
+REACT_APP_OPENAI_API_KEY=sk-...
+```
+
+### 3. Funcionalidades disponíveis
+- **Chat GPT**: Processamento de linguagem natural
+- **DALL-E**: Geração de imagens
+- **Sora**: Geração de vídeos (quando disponível)
+
+## 📥 Importação de Clientes via CSV
+
+### Formato do arquivo
+```csv
+Nome,CPF,Telefone,Email,Grupo,Observacoes
+João da Silva,12345678901,11999999999,joao@email.com,Grupo A,Cliente importante
+Maria Lima,98765432100,11988888888,maria@email.com,Grupo B,VIP
+```
+
+### Campos obrigatórios
+- **Nome**: Nome completo do cliente
+- **CPF**: CPF válido (formato: 12345678901)
+- **Telefone**: Telefone com DDD (formato: 11999999999)
+
+### Campos opcionais
+- **Email**: Email válido
+- **Grupo**: Nome do grupo (será criado se não existir)
+- **Observacoes**: Notas adicionais
+
+### Validações automáticas
+- ✅ CPF brasileiro válido
+- ✅ Telefone com formato correto
+- ✅ Email válido (se fornecido)
+- ✅ Campos obrigatórios preenchidos
+
+## 🎯 Uso da Plataforma
+
+### 1. **Login e Autenticação**
+- Acesse `/login`
+- Use credenciais de teste ou crie uma conta
+- Sistema redireciona para dashboard apropriado
+
+### 2. **Dashboard do Proprietário**
+- Gestão completa de usuários e empresas
+- Criação de planos e recarga de créditos
+- Acesso a todas as funcionalidades
+
+### 3. **Dashboard da Empresa**
+- Gestão de clientes e grupos
+- Criação de campanhas e agentes de IA
+- Controle de inventário e pagamentos
+
+### 4. **Importação de Clientes**
+- Acesse "Clientes" → "Importar via CSV"
+- Faça upload do arquivo
+- Revise validações e erros
+- Confirme importação
+
+### 5. **Configuração de Agentes IA**
+- Acesse "Agentes de IA"
+- Configure prompts e funções
+- Teste respostas em tempo real
+- Ative para campanhas
+
+## 🔧 Desenvolvimento
+
+### Scripts disponíveis
+```bash
+npm start          # Servidor de desenvolvimento
+npm run build      # Build de produção
+npm test           # Executar testes
+npm run eject      # Ejetar configurações (irreversível)
+```
+
+### Estrutura de desenvolvimento
+- **Componentes**: Funcionais com hooks
+- **Estado**: Context API para estado global
+- **Roteamento**: React Router com proteção de rotas
+- **Estilização**: TailwindCSS com classes utilitárias
+
+## 📊 Funcionalidades em Desenvolvimento
+
+- [ ] Sistema de notificações em tempo real
+- [ ] Relatórios avançados e analytics
+- [ ] Integração com WhatsApp Business API
+- [ ] Sistema de templates de campanhas
+- [ ] Backup automático de dados
+- [ ] API REST para integrações externas
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 📞 Suporte
+
+- **Email**: suporte@plataforma-ia.com
+- **Documentação**: [docs.plataforma-ia.com](https://docs.plataforma-ia.com)
+- **Issues**: [GitHub Issues](https://github.com/seu-usuario/plataforma-agentes-ia/issues)
+
+## 🎉 Agradecimentos
+
+- OpenAI pela API de IA
+- Comunidade React e TypeScript
+- Contribuidores e testadores
+
+---
+
+**Desenvolvido com ❤️ para revolucionar o atendimento ao cliente com IA**
