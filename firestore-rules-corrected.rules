@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Função para verificar se o usuário está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Função para verificar se o usuário é proprietário ou admin
+    function isOwnerOrAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.category == 'proprietario' || 
+         request.auth.token.category == 'admin');
+    }
+    
+    // Função para verificar se o usuário pode acessar dados da empresa
+    function canAccessCompany(companyId) {
+      return isAuthenticated() && 
+        (request.auth.token.category == 'proprietario' || 
+         request.auth.token.category == 'admin' ||
+         request.auth.token.companyId == companyId);
+    }
+    
+    // Função para verificar se o usuário é dono da empresa
+    function isCompanyOwner(empresaId) {
+      return isAuthenticated() && 
+        (request.auth.token.category == 'proprietario' || 
+         request.auth.token.category == 'admin' ||
+         resource.data.ownerEmail == request.auth.token.email);
+    }
+
+    // Usuários - cada usuário pode ler/escrever apenas seus próprios dados
+    match /usuarios/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isOwnerOrAdmin(); // Proprietários e admins podem ver todos
+    }
+    
+    // Empresas - CORRIGIDO: usuários podem criar suas próprias empresas
+    match /empresas/{empresaId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // ✅ PERMITIR CRIAÇÃO para usuários autenticados
+      allow update, delete: if isCompanyOwner(empresaId); // ✅ PERMITIR edição/exclusão para donos
+    }
+    
+    // Clientes - podem ser acessados por usuários da empresa correspondente
+    match /clientes/{clientId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Grupos de clientes - mesmo padrão dos clientes
+    match /grupos_clientes/{groupId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Campanhas - mesmo padrão
+    match /campanhas/{campaignId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Planos - podem ser lidos por todos, escritos apenas por proprietários/admins
+    match /planos/{planId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwnerOrAdmin();
+    }
+    
+    // Pagamentos - mesmo padrão dos clientes
+    match /pagamentos/{paymentId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Notas fiscais - mesmo padrão
+    match /notas_fiscais/{invoiceId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Integrações - mesmo padrão
+    match /integracoes/{integrationId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Documentos - mesmo padrão
+    match /documentos/{documentId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Produtos - mesmo padrão
+    match /produtos/{productId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Serviços - mesmo padrão
+    match /servicos/{serviceId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Imagens - mesmo padrão
+    match /imagens/{imageId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Vídeos - mesmo padrão
+    match /videos/{videoId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+    
+    // Agentes IA - mesmo padrão
+    match /agentes_ia/{agentId} {
+      allow read, write: if canAccessCompany(resource.data.companyId);
+    }
+  }
+}
+

@@ -1,0 +1,11 @@
+Nome,CPF,Telefone,Email,Grupo,Observacoes
+João da Silva,12345678901,11999999999,joao@email.com,Grupo A,Cliente importante
+Maria Lima,98765432100,11988888888,maria@email.com,Grupo B,VIP
+Carlos Santos,11122233344,11977777777,carlos@email.com,Grupo A,Cliente recorrente
+Ana Oliveira,55566677788,11966666666,ana@email.com,Grupo C,Novo cliente
+Pedro Costa,99988877766,11955555555,pedro@email.com,Grupo B,Cliente premium
+Lucia Ferreira,33344455566,11944444444,lucia@email.com,Grupo A,Cliente ativo
+Roberto Almeida,77788899900,11933333333,roberto@email.com,Grupo C,Cliente potencial
+Fernanda Souza,22233344455,11922222222,fernanda@email.com,Grupo B,Cliente fiel
+Marcelo Lima,66677788899,11911111111,marcelo@email.com,Grupo A,Cliente antigo
+Patricia Costa,00011122233,11900000000,patricia@email.com,Grupo C,Cliente novo
