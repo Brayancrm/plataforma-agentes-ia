@@ -2,8 +2,8 @@
 # Copie estas variáveis para o painel da Vercel
 
 # Google OAuth 2.0
-GOOGLE_CLIENT_ID=221105450106-9e6ktkr9pmgn353ag4nici65ivu3be02.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+GOOGLE_CLIENT_ID=SEU_GOOGLE_CLIENT_ID_AQUI
+GOOGLE_CLIENT_SECRET=SEU_GOOGLE_CLIENT_SECRET_AQUI
 
 # Google Cloud / Vertex AI
 VERTEX_AI_PROJECT_ID=beprojects-836d6

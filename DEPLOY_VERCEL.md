@@ -29,8 +29,8 @@ git push origin main
 No painel da Vercel, adicione estas variáveis:
 
 ```
-GOOGLE_CLIENT_ID=221105450106-9e6ktkr9pmgn353ag4nici65ivu3be02.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+GOOGLE_CLIENT_ID=SEU_GOOGLE_CLIENT_ID_AQUI
+GOOGLE_CLIENT_SECRET=SEU_GOOGLE_CLIENT_SECRET_AQUI
 VERTEX_AI_PROJECT_ID=beprojects-836d6
 VERTEX_AI_LOCATION=us-central1
 SESSION_SECRET=dati-ia-veo3-oauth-secret-key-2024
