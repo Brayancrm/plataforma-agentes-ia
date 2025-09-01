@@ -3417,6 +3417,13 @@ const DashboardPage: React.FC = () => {
                     <Globe className="w-4 h-4 mr-2" />
                     🔐 Autenticar
                   </button>
+
+                  <button
+                    onClick={testDebugAPI}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center justify-center"
+                  >
+                    🔍 Debug API
+                  </button>
                 </div>
                 
                 {oauthTestResult && (
@@ -5787,6 +5794,26 @@ const DashboardPage: React.FC = () => {
       console.error('❌ Erro ao iniciar OAuth:', error);
       setOauthStatus('error');
       setOauthTestResult(`❌ Erro ao iniciar autenticação: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
+  };
+
+  const testDebugAPI = async () => {
+    try {
+      console.log('🔍 Testando API de debug...');
+      const response = await fetch('/api/debug');
+      console.log('📊 Status da resposta debug:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`API debug não respondeu: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ API debug funcionando:', data);
+      alert(`✅ API Debug OK!\n${JSON.stringify(data, null, 2)}`);
+      
+    } catch (error) {
+      console.error('❌ Erro na API debug:', error);
+      alert(`❌ Erro na API debug: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
 
