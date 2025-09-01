@@ -3432,7 +3432,7 @@ const DashboardPage: React.FC = () => {
                 
                 <div className="text-xs text-gray-600 space-y-1">
                   <p><strong>Status:</strong> {oauthStatus}</p>
-                  <p><strong>Servidor:</strong> http://localhost:5000</p>
+                  <p><strong>Servidor:</strong> {window.location.origin}</p>
                   <p><strong>Projeto:</strong> beprojects-836d6</p>
                 </div>
               </div>
