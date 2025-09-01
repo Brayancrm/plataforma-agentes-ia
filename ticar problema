@@ -1,0 +1,3 @@
+[33me439c81[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m Corrigir exibição do servidor - usar domínio atual em vez de localhost
+[33m24246cd[m Configurar funções serverless específicas com runtime Node.js 18.x
+[33mda2a8a4[m Corrigir configuração Vercel e funções serverless
