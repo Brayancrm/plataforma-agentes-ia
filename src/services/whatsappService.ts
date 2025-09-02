@@ -5,7 +5,7 @@ interface WhatsAppConnection {
   id: string;
   agentId: string;
   agentName: string;
-  status: 'disconnected' | 'connecting' | 'connected' | 'error' | 'waiting_qr' | 'demo_connected';
+  status: 'disconnected' | 'connecting' | 'connected' | 'error' | 'waiting_qr';
   qrCode?: string;
   lastSeen?: string;
   error?: string;
