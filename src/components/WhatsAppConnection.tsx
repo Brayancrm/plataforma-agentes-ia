@@ -11,7 +11,8 @@ import {
   Send,
   Settings,
   Power,
-  Clock
+  Clock,
+  Info
 } from 'lucide-react';
 import WhatsAppService, { WhatsAppConnection, WhatsAppAgent } from '../services/whatsappService';
 

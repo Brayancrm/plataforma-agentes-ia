@@ -27,10 +27,10 @@ interface Veo3Response {
 
 class Veo3Service {
   private static config: Veo3Config = {
-    clientId: '221105450106-9e6ktkr9pmgn353ag4nici65ivu3be02.apps.googleusercontent.com',
-    clientSecret: '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',
-    projectId: 'beprojects-836d6',
-    projectNumber: '221105450106'
+    clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.REACT_APP_GOOGLE_CLIENT_SECRET || '',
+    projectId: process.env.REACT_APP_GOOGLE_PROJECT_ID || '',
+    projectNumber: process.env.REACT_APP_GOOGLE_PROJECT_NUMBER || ''
   };
 
   private static accessToken: string | null = null;
