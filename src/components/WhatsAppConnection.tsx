@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   MessageCircle, 
   QrCode, 
-  Smartphone, 
   CheckCircle, 
   AlertCircle, 
   Loader, 
@@ -11,8 +10,7 @@ import {
   Send,
   Settings,
   Power,
-  Clock,
-  Info
+  Clock
 } from 'lucide-react';
 import WhatsAppService, { WhatsAppConnection, WhatsAppAgent } from '../services/whatsappService';
 
@@ -33,7 +31,6 @@ const WhatsAppConnectionComponent: React.FC<WhatsAppConnectionProps> = ({
   const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [qrCodeVisible, setQrCodeVisible] = useState(false);
 
   // Estados para configurações do agente
   const [agentConfig, setAgentConfig] = useState({
@@ -68,18 +65,17 @@ const WhatsAppConnectionComponent: React.FC<WhatsAppConnectionProps> = ({
         ...agentConfig
       };
 
-      const newConnection = await WhatsAppService.connectAgent(agent);
-      setConnection(newConnection);
-      setQrCodeVisible(true);
+             const newConnection = await WhatsAppService.connectAgent(agent);
+       setConnection(newConnection);
 
       // Inicia polling para verificar status
       const stopPolling = WhatsAppService.startStatusPolling(agentId, (status) => {
-        setConnection(prev => prev ? { ...prev, ...status } : status);
-        
-        // Se conectou com sucesso, esconde QR Code
-        if (status.status === 'connected') {
-          setQrCodeVisible(false);
-        }
+                 setConnection(prev => prev ? { ...prev, ...status } : status);
+         
+         // Se conectou com sucesso, esconde QR Code
+         if (status.status === 'connected') {
+           // QR Code é automaticamente escondido quando status muda para connected
+         }
       });
 
       setPollingInterval(() => stopPolling);
@@ -99,9 +95,8 @@ const WhatsAppConnectionComponent: React.FC<WhatsAppConnectionProps> = ({
     setError(null);
 
     try {
-      await WhatsAppService.disconnectAgent(agentId);
-      setConnection(null);
-      setQrCodeVisible(false);
+             await WhatsAppService.disconnectAgent(agentId);
+       setConnection(null);
 
       // Para o polling
       if (pollingInterval) {
