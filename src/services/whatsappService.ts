@@ -1,232 +1,233 @@
-// Serviço para gerenciar conexões WhatsApp com agentes IA
-// Integra com as APIs do backend para conectar dispositivos
+// WhatsApp Service usando Twilio (compatível com Vercel)
+// Interface para WhatsApp Business API via Twilio
 
-interface WhatsAppConnection {
+export interface WhatsAppConnection {
   id: string;
   agentId: string;
   agentName: string;
-  status: 'disconnected' | 'connecting' | 'connected' | 'error' | 'waiting_qr';
-  qrCode?: string;
+  status: 'disconnected' | 'connecting' | 'connected' | 'error';
   lastSeen?: string;
   error?: string;
   createdAt: string;
   message?: string;
   instructions?: string[];
-  sessionId?: string;
+  provider: 'twilio';
+  fromNumber?: string;
 }
 
-interface WhatsAppAgent {
+export interface WhatsAppMessage {
   id: string;
-  name: string;
-  prompt: string;
-  autoReply: boolean;
-  typingIndicator: boolean;
-  readReceipts: boolean;
-  connection?: WhatsAppConnection;
-}
-
-interface SendMessageData {
-  agentId: string;
   to: string;
   message: string;
+  agentId: string;
+  agentName: string;
+  timestamp: string;
+  status: 'sending' | 'sent' | 'delivered' | 'failed';
+  error?: string;
 }
 
 class WhatsAppService {
-  private baseUrl: string;
+  private connections: Map<string, WhatsAppConnection> = new Map();
+  private messages: Map<string, WhatsAppMessage> = new Map();
 
-  constructor() {
-    // Sempre usar a URL da Vercel para as APIs
-    this.baseUrl = 'https://plataforma-agentes-ia.vercel.app';
-  }
-
-  /**
-   * Conecta um agente ao WhatsApp gerando QR Code
-   */
-  async connectAgent(agent: Omit<WhatsAppAgent, 'connection'>): Promise<WhatsAppConnection> {
+  // Conectar agente ao WhatsApp via Twilio
+  async connectAgent(agentId: string, agentName: string, agentPrompt?: string): Promise<WhatsAppConnection> {
     try {
-      console.log('🔗 Tentando conectar agente:', agent.id);
-      console.log('📡 URL da API:', `${this.baseUrl}/api/whatsapp-connect`);
+      console.log('🔗 Conectando agente WhatsApp via Twilio:', agentId);
 
-      const response = await fetch(`${this.baseUrl}/api/whatsapp-connect`, {
+      // Verificar se já existe uma conexão
+      const existingConnection = this.connections.get(agentId);
+      if (existingConnection && existingConnection.status === 'connected') {
+        return existingConnection;
+      }
+
+      // Testar conexão com Twilio
+      const testResponse = await fetch('/api/twilio-whatsapp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'connect',
-          agentId: agent.id,
-          agentName: agent.name,
-          agentPrompt: agent.prompt,
-          autoReply: agent.autoReply,
-          typingIndicator: agent.typingIndicator,
-          readReceipts: agent.readReceipts,
-        }),
+          action: 'test_connection'
+        })
       });
 
-      console.log('📡 Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Erro HTTP:', response.status, errorText);
-        throw new Error(`Erro HTTP ${response.status}: ${errorText}`);
+      if (!testResponse.ok) {
+        throw new Error('Falha ao conectar com Twilio. Verifique as configurações.');
       }
 
-      const data = await response.json();
-      console.log('✅ Resposta da API:', data);
+      const testData = await testResponse.json();
       
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao conectar agente');
+      if (!testData.success) {
+        throw new Error(testData.error || 'Erro na configuração do Twilio');
       }
 
-      return data.connection;
+      // Criar conexão
+      const connection: WhatsAppConnection = {
+        id: `twilio_${agentId}_${Date.now()}`,
+        agentId,
+        agentName,
+        status: 'connected',
+        createdAt: new Date().toISOString(),
+        message: 'Conectado via Twilio WhatsApp Business API',
+        provider: 'twilio',
+        fromNumber: testData.config?.fromNumber,
+        instructions: [
+          '✅ Conectado via Twilio WhatsApp Business API',
+          '📱 Envie mensagens para números no formato: +5511999999999',
+          '🤖 O agente responderá automaticamente baseado no prompt configurado',
+          '💬 Use o painel para enviar mensagens de teste'
+        ]
+      };
+
+      this.connections.set(agentId, connection);
+      console.log('✅ Agente conectado via Twilio:', connection);
+      
+      return connection;
+
     } catch (error) {
-      console.error('❌ Erro ao conectar agente WhatsApp:', error);
+      console.error('❌ Erro ao conectar agente:', error);
       
-      // Se for erro de rede, mostrar mensagem mais amigável
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Erro de conexão com o servidor. Verifique sua internet.');
-      }
-      
+      const errorConnection: WhatsAppConnection = {
+        id: `error_${agentId}_${Date.now()}`,
+        agentId,
+        agentName,
+        status: 'error',
+        createdAt: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        provider: 'twilio',
+        message: 'Falha na conexão com Twilio'
+      };
+
+      this.connections.set(agentId, errorConnection);
       throw error;
     }
   }
 
-  /**
-   * Desconecta um agente do WhatsApp
-   */
+  // Desconectar agente
   async disconnectAgent(agentId: string): Promise<void> {
+    console.log('🔌 Desconectando agente:', agentId);
+    this.connections.delete(agentId);
+  }
+
+  // Enviar mensagem via Twilio
+  async sendMessage(agentId: string, to: string, message: string): Promise<WhatsAppMessage> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/whatsapp-connect`, {
+      console.log('📤 Enviando mensagem via Twilio:', { agentId, to, message: message.substring(0, 50) + '...' });
+
+      const connection = this.connections.get(agentId);
+      if (!connection || connection.status !== 'connected') {
+        throw new Error('Agente não está conectado');
+      }
+
+      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Criar mensagem com status inicial
+      const whatsappMessage: WhatsAppMessage = {
+        id: messageId,
+        to,
+        message,
+        agentId,
+        agentName: connection.agentName,
+        timestamp: new Date().toISOString(),
+        status: 'sending'
+      };
+
+      this.messages.set(messageId, whatsappMessage);
+
+      // Enviar via API Twilio
+      const response = await fetch('/api/twilio-whatsapp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'disconnect',
-          agentId,
-        }),
+          action: 'send_message',
+          to,
+          message
+        })
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        whatsappMessage.status = 'failed';
+        whatsappMessage.error = data.error || 'Erro ao enviar mensagem';
+        throw new Error(data.error || 'Falha ao enviar mensagem');
       }
 
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao desconectar agente');
-      }
+      // Atualizar status da mensagem
+      whatsappMessage.status = 'sent';
+      console.log('✅ Mensagem enviada via Twilio:', data.messageId);
+
+      return whatsappMessage;
+
     } catch (error) {
-      console.error('Erro ao desconectar agente WhatsApp:', error);
+      console.error('❌ Erro ao enviar mensagem:', error);
       throw error;
     }
   }
 
-  /**
-   * Verifica o status de conexão de um agente
-   */
-  async getConnectionStatus(agentId: string): Promise<WhatsAppConnection> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/whatsapp-connect?agentId=${agentId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao verificar status');
-      }
-
-      return data.status;
-    } catch (error) {
-      console.error('Erro ao verificar status da conexão:', error);
-      throw error;
+  // Obter status da conexão
+  async getConnectionStatus(agentId: string): Promise<WhatsAppConnection | null> {
+    const connection = this.connections.get(agentId);
+    
+    if (!connection) {
+      return null;
     }
-  }
 
-  /**
-   * Envia mensagem manual através do agente
-   */
-  async sendMessage(messageData: SendMessageData): Promise<void> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/whatsapp-connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'send',
-          ...messageData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao enviar mensagem');
-      }
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Simula verificação periódica do status (polling)
-   */
-  startStatusPolling(agentId: string, callback: (status: WhatsAppConnection) => void): () => void {
-    const interval = setInterval(async () => {
+    // Se estiver conectado, verificar status atual
+    if (connection.status === 'connected') {
       try {
-        const status = await this.getConnectionStatus(agentId);
-        callback(status);
+        const response = await fetch('/api/twilio-whatsapp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'get_status'
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            connection.lastSeen = new Date().toISOString();
+            return connection;
+          }
+        }
       } catch (error) {
-        console.error('Erro no polling de status:', error);
+        console.error('❌ Erro ao verificar status:', error);
       }
-    }, 5000); // Verifica a cada 5 segundos
+    }
 
-    // Retorna função para parar o polling
-    return () => clearInterval(interval);
+    return connection;
   }
 
-  /**
-   * Formata número de telefone para o padrão WhatsApp
-   */
-  formatPhoneNumber(phone: string): string {
-    // Remove todos os caracteres não numéricos
-    const cleaned = phone.replace(/\D/g, '');
-    
-    // Se não tem código do país, adiciona +55 (Brasil)
-    if (cleaned.length === 11 && cleaned.startsWith('11')) {
-      return `55${cleaned}`;
-    }
-    
-    if (cleaned.length === 10 || cleaned.length === 11) {
-      return `55${cleaned}`;
-    }
-    
-    return cleaned;
+  // Obter todas as conexões
+  getAllConnections(): WhatsAppConnection[] {
+    return Array.from(this.connections.values());
   }
 
-  /**
-   * Valida se o número está no formato correto
-   */
-  isValidPhoneNumber(phone: string): boolean {
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length >= 10 && cleaned.length <= 15;
+  // Obter mensagens de um agente
+  getAgentMessages(agentId: string): WhatsAppMessage[] {
+    return Array.from(this.messages.values())
+      .filter(msg => msg.agentId === agentId)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }
+
+  // Limpar mensagens antigas
+  clearOldMessages(hours: number = 24): void {
+    const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
+    
+    for (const [id, message] of this.messages.entries()) {
+      if (new Date(message.timestamp) < cutoff) {
+        this.messages.delete(id);
+      }
+    }
   }
 }
 
-const whatsAppService = new WhatsAppService();
-export default whatsAppService;
-export type { WhatsAppConnection, WhatsAppAgent, SendMessageData };
+// Exportar instância única
+const whatsappService = new WhatsAppService();
+export default whatsappService;
