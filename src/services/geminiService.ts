@@ -235,7 +235,98 @@ export class GeminiService {
     }
   }
 
-  // Análise de imagem com Gemini Vision
+  // Edição de imagem com Gemini 2.5 Flash
+  static async editImage(imageBase64: string, editPrompt: string) {
+    try {
+      if (!GEMINI_API_KEY) {
+        throw new Error('API key do Gemini não configurada');
+      }
+
+      console.log('🎨 Gemini 2.5 Flash: Analisando imagem para edição...');
+
+      // Usar Gemini 2.5 Flash para analisar a imagem e gerar instruções de edição
+      const analysisPrompt = `Analise esta imagem e crie instruções detalhadas de edição baseadas nesta solicitação: "${editPrompt}".
+      
+      Forneça:
+      1. Descrição atual da imagem
+      2. Modificações específicas necessárias
+      3. Prompt otimizado para regenerar a imagem com as edições
+      
+      Responda em formato JSON:
+      {
+        "currentDescription": "descrição atual",
+        "modifications": "modificações necessárias",
+        "editedPrompt": "prompt otimizado para regenerar"
+      }`;
+
+      const response = await fetch(`${GEMINI_BASE_URL}/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                text: analysisPrompt
+              },
+              {
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: imageBase64.replace('data:image/jpeg;base64,', '').replace('data:image/png;base64,', '')
+                }
+              }
+            ]
+          }]
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Erro da API Gemini 2.5 Flash: ${response.status} - ${errorData.error?.message || 'Erro desconhecido'}`);
+      }
+
+      const data = await response.json();
+      const analysisText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      console.log('🔍 Análise do Gemini 2.5 Flash:', analysisText);
+
+      // Tentar extrair JSON da resposta
+      let analysisResult;
+      try {
+        // Procurar por JSON na resposta
+        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          analysisResult = JSON.parse(jsonMatch[0]);
+        } else {
+          // Se não encontrar JSON, criar estrutura baseada no texto
+          analysisResult = {
+            currentDescription: "Imagem analisada pelo Gemini",
+            modifications: editPrompt,
+            editedPrompt: `${analysisText} ${editPrompt}`
+          };
+        }
+      } catch (parseError) {
+        // Fallback se não conseguir parsear JSON
+        analysisResult = {
+          currentDescription: "Imagem analisada pelo Gemini",
+          modifications: editPrompt,
+          editedPrompt: `${analysisText} ${editPrompt}`
+        };
+      }
+
+      return {
+        success: true,
+        analysis: analysisResult,
+        editedPrompt: analysisResult.editedPrompt,
+        originalAnalysis: analysisText
+      };
+      
+    } catch (error) {
+      console.error('Erro na edição de imagem com Gemini 2.5 Flash:', error);
+      throw error;
+    }
+  }
   static async analyzeImage(imageBase64: string, prompt: string = 'Descreva esta imagem') {
     try {
       if (!GEMINI_API_KEY) {

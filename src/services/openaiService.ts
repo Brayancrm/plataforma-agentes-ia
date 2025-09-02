@@ -58,20 +58,19 @@ export class OpenAIService {
   // Geração de imagens com DALL-E
   static async generateImage(prompt: string, size: '256x256' | '512x512' | '1024x1024' = '1024x1024') {
     try {
-      // API key da OpenAI
-      const apiKey = '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';
-      
-      console.log('🔍 DEBUG - Usando API key da OpenAI');
-      
-      if (!apiKey) {
-        throw new Error('API key da OpenAI não configurada');
+      // Usar a API key da variável de ambiente
+      if (!OPENAI_API_KEY || OPENAI_API_KEY === 'sua-api-key-aqui') {
+        throw new Error('API key da OpenAI não configurada. Configure a variável REACT_APP_OPENAI_API_KEY no arquivo .env');
       }
+      
+      console.log('🔍 DEBUG - Usando API key da OpenAI da variável de ambiente');
+      console.log('🔍 DEBUG - API key:', OPENAI_API_KEY?.substring(0, 20) + '...');
 
       const response = await fetch(`${OPENAI_BASE_URL}/images/generations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
         model: 'dall-e-3',
@@ -84,15 +83,28 @@ export class OpenAIService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Erro da API OpenAI:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
         
         if (response.status === 401) {
-          throw new Error('API key inválida. Verifique sua chave da OpenAI.');
+          throw new Error(`API key inválida ou expirada. 
+          
+🔑 Como corrigir:
+1. Acesse: https://platform.openai.com/api-keys
+2. Gere uma nova API key
+3. Atualize o arquivo .env com: REACT_APP_OPENAI_API_KEY=sua-nova-chave
+4. Reinicie o servidor (npm start)`);
         } else if (response.status === 429) {
           throw new Error('Limite de requisições atingido. Tente novamente em alguns minutos.');
         } else if (response.status === 400 && errorData.error?.code === 'content_policy_violation') {
           throw new Error('O prompt viola as políticas de conteúdo da OpenAI. Tente uma descrição diferente.');
+        } else if (response.status === 402) {
+          throw new Error('Créditos insuficientes na sua conta OpenAI. Adicione créditos em https://platform.openai.com/account/billing');
         } else {
-          throw new Error(`Erro da API: ${response.status} - ${errorData.error?.message || 'Erro desconhecido'}`);
+          throw new Error(`Erro da API OpenAI: ${response.status} - ${errorData.error?.message || response.statusText}`);
         }
       }
 
@@ -113,14 +125,17 @@ export class OpenAIService {
   ) {
     try {
       // API key da OpenAI
-      const apiKey = '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';
+      // Usar a API key da variável de ambiente
+      if (!OPENAI_API_KEY || OPENAI_API_KEY === 'sua-api-key-aqui') {
+        throw new Error('API key da OpenAI não configurada. Configure a variável REACT_APP_OPENAI_API_KEY no arquivo .env');
+      }
       
       console.log('🖼️ OpenAI: Editando imagem com abordagem melhorada...');
       console.log('📝 Prompt de edição:', prompt);
       console.log('🖼️ Arquivo da imagem:', imageFile.name, imageFile.size, 'bytes');
       console.log('📏 Tamanho solicitado:', size);
       
-      if (!apiKey) {
+      if (!OPENAI_API_KEY) {
         throw new Error('API key da OpenAI não configurada');
       }
 
@@ -166,7 +181,7 @@ export class OpenAIService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
           model: 'dall-e-3',
@@ -218,14 +233,17 @@ export class OpenAIService {
   ) {
     try {
       // API key da OpenAI
-      const apiKey = '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';
+      // Usar a API key da variável de ambiente
+      if (!OPENAI_API_KEY || OPENAI_API_KEY === 'sua-api-key-aqui') {
+        throw new Error('API key da OpenAI não configurada. Configure a variável REACT_APP_OPENAI_API_KEY no arquivo .env');
+      }
       
       console.log('🔄 OpenAI: Criando variações da imagem com abordagem melhorada...');
       console.log('🖼️ Arquivo da imagem:', imageFile.name, imageFile.size, 'bytes');
       console.log('📏 Tamanho solicitado:', size);
       console.log('🔢 Número de variações:', n);
       
-      if (!apiKey) {
+      if (!OPENAI_API_KEY) {
         throw new Error('API key da OpenAI não configurada');
       }
 
@@ -246,7 +264,7 @@ export class OpenAIService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
           model: 'dall-e-3',
@@ -298,9 +316,12 @@ export class OpenAIService {
       console.log('⏱️ Duração solicitada:', duration, 'segundos');
       
       // API key da OpenAI
-      const apiKey = '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';
+      // Usar a API key da variável de ambiente
+      if (!OPENAI_API_KEY || OPENAI_API_KEY === 'sua-api-key-aqui') {
+        throw new Error('API key da OpenAI não configurada. Configure a variável REACT_APP_OPENAI_API_KEY no arquivo .env');
+      }
       
-      if (!apiKey) {
+      if (!OPENAI_API_KEY) {
         throw new Error('API key da OpenAI não configurada');
       }
 
@@ -328,7 +349,7 @@ export class OpenAIService {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`,
+              'Authorization': `Bearer ${OPENAI_API_KEY}`,
             },
             body: JSON.stringify({
               model: 'dall-e-3',

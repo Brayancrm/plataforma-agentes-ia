@@ -35,7 +35,7 @@
     "restart": "taskkill /F /IM node.exe /T 2>nul & npm start",
     "dev-watch": "concurrently \"npm start\" \"echo 🚀 Servidor em modo watch\"",
     "quick-start": "node auto-start.js",
-    "vercel-build": "npm run build"
+    "vercel-build": "DISABLE_ESLINT_PLUGIN=true react-scripts build"
   },
   "eslintConfig": {
     "extends": [

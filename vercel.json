@@ -1,37 +1,24 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "build",
-  "functions": {
-    "api/debug.js": {
-      "runtime": "nodejs18.x",
-      "memory": 1024,
-      "maxDuration": 10
-    },
-    "api/test.js": {
-      "runtime": "nodejs18.x",
-      "memory": 1024,
-      "maxDuration": 10
-    },
-    "api/auth/status.js": {
-      "runtime": "nodejs18.x",
-      "memory": 1024,
-      "maxDuration": 10
-    },
-    "api/auth/google.js": {
-      "runtime": "nodejs18.x",
-      "memory": 1024,
-      "maxDuration": 10
-    },
-    "api/auth/google/callback.js": {
-      "runtime": "nodejs18.x",
-      "memory": 1024,
-      "maxDuration": 10
-    },
-    "api/ping.js": {
-      "runtime": "nodejs18.x",
-      "memory": 1024,
-      "maxDuration": 10
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, X-Start-Time, Authorization"
+        }
+      ]
     }
-  }
+  ]
 }

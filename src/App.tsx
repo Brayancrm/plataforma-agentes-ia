@@ -1,7 +1,9 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
 import DashboardPage from './pages/DashboardPage';
 import { LoginPage } from './components/LoginPage';
+import OAuthCallback from './pages/OAuthCallback';
 import { useAuth } from './components/AuthProvider';
 import './index.css';
 
@@ -27,11 +29,16 @@ const AppContent: React.FC = () => {
   return <DashboardPage />;
 };
 
-// App principal com AuthProvider
+// App principal com AuthProvider e roteamento
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <Routes>
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
+          <Route path="*" element={<AppContent />} />
+        </Routes>
+      </Router>
     </AuthProvider>
   );
 };

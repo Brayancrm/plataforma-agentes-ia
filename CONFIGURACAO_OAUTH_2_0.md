@@ -184,3 +184,5 @@ GET /api/test - Testar servidor
 
 **Siga os passos e tenha geração profissional de vídeo!** 🎬
 
+
+
