@@ -2,15 +2,27 @@ const express = require('express');
 const cors = require('cors');
 const { OAuth2Client } = require('google-auth-library');
 const axios = require('axios');
-const twilio = require('twilio');
+const http = require('http');
+const socketIo = require('socket.io');
+const WhatsAppWebService = require('./whatsapp-web-service');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Inicializar WhatsApp Web Service
+const whatsappService = new WhatsAppWebService(io);
 
 // Configurações OAuth 2.0
 const oauth2Client = new OAuth2Client(
@@ -23,13 +35,66 @@ const oauth2Client = new OAuth2Client(
 let accessToken = null;
 let refreshToken = null;
 
-// Configuração Twilio
-const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-const twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER;
+// Socket.io handlers para WhatsApp Web (igual ao exemplo)
+io.on('connection', (socket) => {
+  console.log('🔌 Cliente conectado:', socket.id);
 
-// Armazenar conexões de agentes (em produção, use banco de dados)
-const agentConnections = new Map();
-const messageHistory = new Map();
+  // Conectar WhatsApp (igual ao exemplo)
+  socket.on('whatsapp:connect', async (data) => {
+    try {
+      const { clientId, clientName, agentPrompt } = data;
+      console.log('📱 Solicitação de conexão WhatsApp:', clientId);
+      
+      const result = await whatsappService.connectClient(clientId, clientName, socket);
+      socket.emit('whatsapp:connect_result', result);
+    } catch (error) {
+      console.error('❌ Erro ao conectar WhatsApp:', error);
+      socket.emit('whatsapp:error', { error: error.message });
+    }
+  });
+
+  // Desconectar WhatsApp
+  socket.on('whatsapp:disconnect', async (data) => {
+    try {
+      const { clientId } = data;
+      const result = await whatsappService.disconnectClient(clientId, socket);
+      socket.emit('whatsapp:disconnect_result', result);
+    } catch (error) {
+      console.error('❌ Erro ao desconectar WhatsApp:', error);
+      socket.emit('whatsapp:error', { error: error.message });
+    }
+  });
+
+  // Enviar mensagem
+  socket.on('whatsapp:send_message', async (data) => {
+    try {
+      const { clientId, to, message } = data;
+      const result = await whatsappService.sendMessage(clientId, to, message);
+      socket.emit('whatsapp:message_sent', result);
+    } catch (error) {
+      console.error('❌ Erro ao enviar mensagem:', error);
+      socket.emit('whatsapp:error', { error: error.message });
+    }
+  });
+
+  // Obter status
+  socket.on('whatsapp:get_status', (data) => {
+    const { clientId } = data;
+    const status = whatsappService.getConnectionStatus(clientId);
+    const qrCode = whatsappService.getQRCode(clientId);
+    
+    socket.emit('whatsapp:status', {
+      clientId,
+      status: status?.status || 'DISCONNECTED',
+      qrCode: qrCode?.dataURL,
+      connection: status
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔌 Cliente desconectado:', socket.id);
+  });
+});
 
 // Rota para iniciar autenticação OAuth 2.0
 app.get('/auth/google', (req, res) => {
@@ -287,33 +352,23 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// ==================== TWILIO WHATSAPP ROUTES ====================
+// ==================== WHATSAPP WEB ROUTES ====================
 
-// Rota para teste de conexão Twilio
-app.post('/api/twilio-whatsapp', async (req, res) => {
+// Rota para WhatsApp Web (igual ao exemplo)
+app.post('/api/whatsapp-web', async (req, res) => {
   try {
-    const { action, to, message, agentId, agentName, agentPrompt } = req.body;
+    const { action, to, message, clientId, clientName, agentPrompt } = req.body;
 
-    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !twilioWhatsAppNumber) {
-      return res.status(500).json({
-        success: false,
-        error: 'Configuração do Twilio incompleta. Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN e TWILIO_WHATSAPP_NUMBER.'
-      });
-    }
-
-    console.log('📱 Ação Twilio WhatsApp:', action);
+    console.log('📱 Ação WhatsApp Web:', action);
 
     switch (action) {
       case 'test_connection':
         return res.json({
           success: true,
-          status: 'connected',
-          provider: 'twilio',
-          message: 'Conexão Twilio testada com sucesso',
-          config: {
-            accountSid: process.env.TWILIO_ACCOUNT_SID ? '***' + process.env.TWILIO_ACCOUNT_SID.slice(-4) : 'não configurado',
-            fromNumber: twilioWhatsAppNumber
-          }
+          status: 'ready',
+          provider: 'whatsapp-web',
+          message: 'WhatsApp Web pronto para conectar',
+          service: 'WhatsApp Web API'
         });
 
       case 'connect_agent':
@@ -609,14 +664,15 @@ async function generateAIResponse(userMessage, agentPrompt) {
   }
 }
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log('🚀 Servidor OAuth 2.0 iniciado na porta', PORT);
+// Iniciar servidor com Socket.io
+server.listen(PORT, () => {
+  console.log('🚀 Servidor WhatsApp Web + OAuth 2.0 iniciado na porta', PORT);
+  console.log('📱 WhatsApp Web API: Ativo');
+  console.log('🔌 Socket.io: Ativo');
   console.log('🔑 Project ID:', process.env.VERTEX_AI_PROJECT_ID);
   console.log('🌍 Location:', process.env.VERTEX_AI_LOCATION);
-  console.log('📝 Configure as variáveis de ambiente em .env');
   console.log('🌐 Servidor rodando em: http://localhost:' + PORT);
 });
 
-module.exports = app;
+module.exports = { app, server, io };
 

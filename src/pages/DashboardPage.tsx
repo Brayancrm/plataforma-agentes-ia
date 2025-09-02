@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../components/AuthProvider';
 import { useFirestore } from '../hooks/useFirestore';
 import { useFirebaseStorage } from '../hooks/useFirebaseStorage';
-import WhatsAppConnectionComponent from '../components/WhatsAppConnection';
+import WhatsAppWebDirect from '../components/WhatsAppWebDirect';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import OpenAIService from '../services/openaiService';
@@ -4224,15 +4224,25 @@ const DashboardPage: React.FC = () => {
         {showWhatsappConnection && selectedWhatsappAgent && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <WhatsAppConnectionComponent
-                agentId={selectedWhatsappAgent.id}
-                agentName={selectedWhatsappAgent.name}
-                onClose={() => {
-                  setShowWhatsappConnection(false);
-                  setSelectedWhatsappAgent(null);
-                }}
-                className="border-0 shadow-none"
-              />
+              <div className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold">WhatsApp - {selectedWhatsappAgent.name}</h2>
+                  <button
+                    onClick={() => {
+                      setShowWhatsappConnection(false);
+                      setSelectedWhatsappAgent(null);
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <WhatsAppWebDirect
+                  agentId={selectedWhatsappAgent.id}
+                  agentName={selectedWhatsappAgent.name}
+                  agentPrompt={selectedWhatsappAgent.prompt}
+                />
+              </div>
             </div>
           </div>
         )}
