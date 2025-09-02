@@ -65,17 +65,17 @@ const WhatsAppConnectionComponent: React.FC<WhatsAppConnectionProps> = ({
         ...agentConfig
       };
 
-             const newConnection = await WhatsAppService.connectAgent(agent);
-       setConnection(newConnection);
+      const newConnection = await WhatsAppService.connectAgent(agent);
+      setConnection(newConnection);
 
       // Inicia polling para verificar status
       const stopPolling = WhatsAppService.startStatusPolling(agentId, (status) => {
-                 setConnection(prev => prev ? { ...prev, ...status } : status);
-         
-         // Se conectou com sucesso, esconde QR Code
-         if (status.status === 'connected') {
-           // QR Code é automaticamente escondido quando status muda para connected
-         }
+        setConnection(prev => prev ? { ...prev, ...status } : status);
+        
+        // Se conectou com sucesso, QR Code é automaticamente escondido
+        if (status.status === 'connected') {
+          // QR Code é automaticamente escondido quando status muda para connected
+        }
       });
 
       setPollingInterval(() => stopPolling);
@@ -95,8 +95,8 @@ const WhatsAppConnectionComponent: React.FC<WhatsAppConnectionProps> = ({
     setError(null);
 
     try {
-             await WhatsAppService.disconnectAgent(agentId);
-       setConnection(null);
+      await WhatsAppService.disconnectAgent(agentId);
+      setConnection(null);
 
       // Para o polling
       if (pollingInterval) {
