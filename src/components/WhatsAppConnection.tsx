@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   MessageCircle,
-  QrCode,
   CheckCircle,
   AlertCircle,
   Loader,
   X,
-  RefreshCw,
   Send,
-  Settings,
-  Power,
-  Clock
+  Power
 } from 'lucide-react';
 import whatsappService, { WhatsAppConnection, WhatsAppMessage } from '../services/whatsappService';
 
@@ -74,9 +70,9 @@ const WhatsAppConnectionComponent: React.FC<WhatsAppConnectionProps> = ({
       setConnection(newConnection);
       onConnectionChange?.(newConnection);
       
-      // Carregar mensagens existentes
-      const agentMessages = whatsappService.getAgentMessages(agentId);
-      setMessages(agentMessages);
+      // Carregar mensagens existentes do servidor
+      const serverMessages = await whatsappService.loadMessagesFromServer(agentId);
+      setMessages(serverMessages);
       
     } catch (err) {
       console.error('❌ Erro ao conectar:', err);
@@ -148,9 +144,12 @@ const WhatsAppConnectionComponent: React.FC<WhatsAppConnectionProps> = ({
       setConnection(existingConnection);
       onConnectionChange?.(existingConnection);
       
-      // Carregar mensagens
-      const agentMessages = whatsappService.getAgentMessages(agentId);
-      setMessages(agentMessages);
+      // Carregar mensagens do servidor
+      const loadMessages = async () => {
+        const serverMessages = await whatsappService.loadMessagesFromServer(agentId);
+        setMessages(serverMessages);
+      };
+      loadMessages();
     }
   }, [agentId, onConnectionChange]);
 

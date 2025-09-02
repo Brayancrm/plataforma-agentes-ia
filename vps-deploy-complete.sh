@@ -138,29 +138,84 @@ REACT_APP_OPENAI_API_KEY=
 # Google (opcional)
 REACT_APP_GOOGLE_CLIENT_ID=
 REACT_APP_GOOGLE_CLIENT_SECRET=
+
+# Twilio WhatsApp (IMPORTANTE - Configure após deploy!)
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_WHATSAPP_NUMBER=
+
+# IA para respostas automáticas (opcional)
+OPENAI_API_KEY=
+GEMINI_API_KEY=
 EOL
 check_success "Arquivo .env criado"
+
+# PASSO 8.1: Configurar .env do servidor
+log_step "8.1" "Configurando .env do servidor..."
+cd server
+cat > .env << 'EOL'
+# Google Cloud OAuth 2.0
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:5000/auth/google/callback
+
+# Vertex AI
+VERTEX_AI_PROJECT_ID=beprojects-836d6
+VERTEX_AI_LOCATION=us-central1
+
+# Servidor
+PORT=5000
+NODE_ENV=production
+SESSION_SECRET=sua-chave-secreta-aqui
+
+# Twilio WhatsApp (IMPORTANTE - Configure após deploy!)
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+
+# IA para respostas automáticas (opcional)
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+EOL
+cd ..
+check_success "Arquivo .env do servidor criado"
 
 # PASSO 9: Instalar PM2
 log_step "9" "Instalando PM2 (Process Manager)..."
 npm install -g pm2
 check_success "PM2 instalado"
 
-# PASSO 10: Parar aplicação existente se houver
+# PASSO 9.1: Instalar dependências do servidor
+log_step "9.1" "Instalando dependências do servidor..."
+cd server
+npm install
+check_success "Dependências do servidor instaladas"
+cd ..
+
+# PASSO 10: Parar aplicações existentes se houver
 log_step "10" "Verificando aplicações existentes..."
-if pm2 list | grep -q "whatsapp-agents"; then
-    log_info "Parando aplicação existente..."
-    pm2 stop whatsapp-agents
-    pm2 delete whatsapp-agents
-    log_success "Aplicação existente removida"
-else
-    log_info "Nenhuma aplicação existente encontrada"
+if pm2 list | grep -q "whatsapp-agents-frontend"; then
+    log_info "Parando frontend existente..."
+    pm2 stop whatsapp-agents-frontend
+    pm2 delete whatsapp-agents-frontend
 fi
 
-# PASSO 11: Iniciar aplicação
-log_step "11" "Iniciando aplicação..."
-pm2 start npm --name "whatsapp-agents" -- start
-check_success "Aplicação iniciada com PM2"
+if pm2 list | grep -q "whatsapp-agents-backend"; then
+    log_info "Parando backend existente..."
+    pm2 stop whatsapp-agents-backend
+    pm2 delete whatsapp-agents-backend
+fi
+
+log_success "Aplicações existentes removidas"
+
+# PASSO 11: Iniciar aplicações
+log_step "11" "Iniciando backend (servidor OAuth/Twilio)..."
+pm2 start server/server.js --name "whatsapp-agents-backend"
+check_success "Backend iniciado com PM2"
+
+log_step "11.1" "Iniciando frontend (React)..."
+pm2 start npm --name "whatsapp-agents-frontend" -- start
+check_success "Frontend iniciado com PM2"
 
 # PASSO 12: Configurar PM2 para iniciar com sistema
 log_step "12" "Configurando PM2 para iniciar automaticamente..."
@@ -172,8 +227,9 @@ check_success "PM2 configurado para iniciar com sistema"
 log_step "13" "Configurando firewall..."
 ufw allow ssh
 ufw allow 3000
+ufw allow 5000
 ufw --force enable
-check_success "Firewall configurado"
+check_success "Firewall configurado (portas 3000 e 5000 abertas)"
 
 # PASSO 14: Aguardar aplicação inicializar
 log_step "14" "Aguardando aplicação inicializar..."
@@ -192,11 +248,12 @@ echo "🎉 DEPLOY CONCLUÍDO COM SUCESSO!"
 echo "=============================================="
 echo ""
 echo "📋 INFORMAÇÕES DA APLICAÇÃO:"
-echo "   • URL: http://$PUBLIC_IP:3000"
-echo "   • Status: $(pm2 list | grep whatsapp-agents | awk '{print $10}')"
-echo "   • Logs: pm2 logs whatsapp-agents"
-echo "   • Reiniciar: pm2 restart whatsapp-agents"
-echo "   • Parar: pm2 stop whatsapp-agents"
+echo "   • Frontend: http://$PUBLIC_IP:3000"
+echo "   • Backend API: http://$PUBLIC_IP:5000"
+echo "   • Status: pm2 status"
+echo "   • Logs Frontend: pm2 logs whatsapp-agents-frontend"
+echo "   • Logs Backend: pm2 logs whatsapp-agents-backend"
+echo "   • Reiniciar: pm2 restart all"
 echo ""
 echo "🔥 PRÓXIMOS PASSOS:"
 echo "   1. Acesse: http://$PUBLIC_IP:3000"

@@ -2,6 +2,21 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "build",
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -16,9 +31,12 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, X-Start-Time, Authorization"
+          "value": "Content-Type, Authorization, X-Requested-With"
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

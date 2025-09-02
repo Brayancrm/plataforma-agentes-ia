@@ -41,42 +41,47 @@ class WhatsAppService {
         return existingConnection;
       }
 
-      // Testar conexão com Twilio
-      const testResponse = await fetch('/api/twilio-whatsapp', {
+      // Conectar agente no backend
+      const connectResponse = await fetch('http://localhost:5000/api/twilio-whatsapp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'test_connection'
+          action: 'connect_agent',
+          agentId,
+          agentName,
+          agentPrompt: agentPrompt || 'Sou um assistente virtual inteligente e útil.'
         })
       });
 
-      if (!testResponse.ok) {
-        throw new Error('Falha ao conectar com Twilio. Verifique as configurações.');
+      if (!connectResponse.ok) {
+        throw new Error('Falha ao conectar com Twilio. Verifique as configurações do servidor.');
       }
 
-      const testData = await testResponse.json();
+      const connectData = await connectResponse.json();
       
-      if (!testData.success) {
-        throw new Error(testData.error || 'Erro na configuração do Twilio');
+      if (!connectData.success) {
+        throw new Error(connectData.error || 'Erro na configuração do Twilio');
       }
 
-      // Criar conexão
+      // Criar conexão local baseada na resposta do servidor
       const connection: WhatsAppConnection = {
-        id: `twilio_${agentId}_${Date.now()}`,
+        id: connectData.connection.id,
         agentId,
         agentName,
         status: 'connected',
-        createdAt: new Date().toISOString(),
+        createdAt: connectData.connection.createdAt,
+        lastSeen: connectData.connection.lastSeen,
         message: 'Conectado via Twilio WhatsApp Business API',
         provider: 'twilio',
-        fromNumber: testData.config?.fromNumber,
+        fromNumber: connectData.connection.fromNumber,
         instructions: [
           '✅ Conectado via Twilio WhatsApp Business API',
-          '📱 Envie mensagens para números no formato: +5511999999999',
+          '📱 Configure o webhook no Twilio para: http://seu-servidor.com/webhook/twilio',
           '🤖 O agente responderá automaticamente baseado no prompt configurado',
-          '💬 Use o painel para enviar mensagens de teste'
+          '💬 Use o painel para enviar mensagens de teste',
+          '📞 Número Twilio: ' + (connectData.connection.fromNumber || 'Não configurado')
         ]
       };
 
@@ -136,13 +141,14 @@ class WhatsAppService {
       this.messages.set(messageId, whatsappMessage);
 
       // Enviar via API Twilio
-      const response = await fetch('/api/twilio-whatsapp', {
+      const response = await fetch('http://localhost:5000/api/twilio-whatsapp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           action: 'send_message',
+          agentId,
           to,
           message
         })
@@ -179,7 +185,7 @@ class WhatsAppService {
     // Se estiver conectado, verificar status atual
     if (connection.status === 'connected') {
       try {
-        const response = await fetch('/api/twilio-whatsapp', {
+        const response = await fetch('http://localhost:5000/api/twilio-whatsapp', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -216,15 +222,59 @@ class WhatsAppService {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }
 
+  // Carregar mensagens do servidor
+  async loadMessagesFromServer(agentId: string): Promise<WhatsAppMessage[]> {
+    try {
+      const response = await fetch(`http://localhost:5000/api/messages/${agentId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao carregar mensagens do servidor');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.messages) {
+        // Converter mensagens do servidor para formato local
+        const serverMessages: WhatsAppMessage[] = data.messages.map((msg: any) => ({
+          id: msg.id,
+          to: msg.to || msg.from,
+          message: msg.message,
+          agentId: msg.agentId,
+          agentName: msg.agentName || 'Agente',
+          timestamp: msg.timestamp,
+          status: msg.status === 'received' ? 'delivered' : msg.status,
+          direction: msg.direction
+        }));
+
+        // Atualizar cache local
+        serverMessages.forEach(msg => {
+          this.messages.set(msg.id, msg);
+        });
+
+        return serverMessages;
+      }
+
+      return [];
+    } catch (error) {
+      console.error('❌ Erro ao carregar mensagens do servidor:', error);
+      return [];
+    }
+  }
+
   // Limpar mensagens antigas
   clearOldMessages(hours: number = 24): void {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
     
-    for (const [id, message] of this.messages.entries()) {
+    Array.from(this.messages.entries()).forEach(([id, message]) => {
       if (new Date(message.timestamp) < cutoff) {
         this.messages.delete(id);
       }
-    }
+    });
   }
 }
 

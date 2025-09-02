@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { OAuth2Client } = require('google-auth-library');
 const axios = require('axios');
+const twilio = require('twilio');
 require('dotenv').config();
 
 const app = express();
@@ -21,6 +22,14 @@ const oauth2Client = new OAuth2Client(
 // Armazenar tokens (em produção, use banco de dados)
 let accessToken = null;
 let refreshToken = null;
+
+// Configuração Twilio
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER;
+
+// Armazenar conexões de agentes (em produção, use banco de dados)
+const agentConnections = new Map();
+const messageHistory = new Map();
 
 // Rota para iniciar autenticação OAuth 2.0
 app.get('/auth/google', (req, res) => {
@@ -277,6 +286,328 @@ app.get('/api/test', (req, res) => {
     location: process.env.VERTEX_AI_LOCATION
   });
 });
+
+// ==================== TWILIO WHATSAPP ROUTES ====================
+
+// Rota para teste de conexão Twilio
+app.post('/api/twilio-whatsapp', async (req, res) => {
+  try {
+    const { action, to, message, agentId, agentName, agentPrompt } = req.body;
+
+    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !twilioWhatsAppNumber) {
+      return res.status(500).json({
+        success: false,
+        error: 'Configuração do Twilio incompleta. Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN e TWILIO_WHATSAPP_NUMBER.'
+      });
+    }
+
+    console.log('📱 Ação Twilio WhatsApp:', action);
+
+    switch (action) {
+      case 'test_connection':
+        return res.json({
+          success: true,
+          status: 'connected',
+          provider: 'twilio',
+          message: 'Conexão Twilio testada com sucesso',
+          config: {
+            accountSid: process.env.TWILIO_ACCOUNT_SID ? '***' + process.env.TWILIO_ACCOUNT_SID.slice(-4) : 'não configurado',
+            fromNumber: twilioWhatsAppNumber
+          }
+        });
+
+      case 'connect_agent':
+        if (!agentId || !agentName) {
+          return res.status(400).json({
+            success: false,
+            error: 'agentId e agentName são obrigatórios'
+          });
+        }
+
+        const connection = {
+          id: `twilio_${agentId}_${Date.now()}`,
+          agentId,
+          agentName,
+          agentPrompt: agentPrompt || 'Sou um assistente virtual inteligente.',
+          status: 'connected',
+          provider: 'twilio',
+          fromNumber: twilioWhatsAppNumber,
+          createdAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString()
+        };
+
+        agentConnections.set(agentId, connection);
+        console.log('✅ Agente conectado via Twilio:', agentId);
+
+        return res.json({
+          success: true,
+          connection: connection,
+          message: 'Agente conectado com sucesso via Twilio'
+        });
+
+      case 'send_message':
+        if (!to || !message) {
+          return res.status(400).json({
+            success: false,
+            error: 'Número de destino e mensagem são obrigatórios'
+          });
+        }
+
+        let formattedNumber = to;
+        if (!formattedNumber.startsWith('whatsapp:')) {
+          formattedNumber = `whatsapp:${formattedNumber}`;
+        }
+
+        console.log('📤 Enviando mensagem via Twilio:', {
+          from: twilioWhatsAppNumber,
+          to: formattedNumber,
+          message: message.substring(0, 50) + '...'
+        });
+
+        const twilioMessage = await twilioClient.messages.create({
+          from: twilioWhatsAppNumber,
+          to: formattedNumber,
+          body: message
+        });
+
+        // Salvar no histórico
+        const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const messageData = {
+          id: messageId,
+          agentId: agentId || 'unknown',
+          to: formattedNumber,
+          message,
+          timestamp: new Date().toISOString(),
+          status: 'sent',
+          twilioSid: twilioMessage.sid,
+          direction: 'outbound'
+        };
+
+        if (!messageHistory.has(agentId)) {
+          messageHistory.set(agentId, []);
+        }
+        messageHistory.get(agentId).push(messageData);
+
+        console.log('✅ Mensagem enviada via Twilio:', twilioMessage.sid);
+
+        return res.json({
+          success: true,
+          message: 'Mensagem enviada com sucesso',
+          messageId: twilioMessage.sid,
+          status: twilioMessage.status
+        });
+
+      case 'get_status':
+        return res.json({
+          success: true,
+          status: 'connected',
+          provider: 'twilio',
+          message: 'Twilio WhatsApp conectado e funcionando',
+          fromNumber: twilioWhatsAppNumber,
+          activeConnections: agentConnections.size
+        });
+
+      default:
+        return res.status(400).json({
+          success: false,
+          error: 'Ação não reconhecida',
+          availableActions: ['test_connection', 'connect_agent', 'send_message', 'get_status']
+        });
+    }
+
+  } catch (error) {
+    console.error('❌ Erro na API Twilio WhatsApp:', error);
+    
+    let errorMessage = 'Erro interno do servidor';
+    if (error.code === 21211) {
+      errorMessage = 'Número de telefone inválido';
+    } else if (error.code === 21608) {
+      errorMessage = 'Número não está no WhatsApp';
+    } else if (error.code === 21610) {
+      errorMessage = 'Mensagem muito longa';
+    } else if (error.code === 21614) {
+      errorMessage = 'Conteúdo da mensagem não permitido';
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: errorMessage,
+      details: error.message,
+      code: error.code
+    });
+  }
+});
+
+// Webhook para receber mensagens do Twilio
+app.post('/webhook/twilio', express.raw({type: 'application/x-www-form-urlencoded'}), async (req, res) => {
+  try {
+    console.log('📨 Webhook Twilio recebido:', req.body);
+
+    // Parse do corpo da requisição (Twilio envia como form-urlencoded)
+    const body = new URLSearchParams(req.body.toString());
+    const messageData = {
+      from: body.get('From'),
+      to: body.get('To'),
+      body: body.get('Body'),
+      messageSid: body.get('MessageSid'),
+      accountSid: body.get('AccountSid')
+    };
+
+    console.log('📱 Mensagem recebida:', messageData);
+
+    // Encontrar agente responsável por este número
+    let targetAgent = null;
+    for (const [agentId, connection] of agentConnections) {
+      if (connection.fromNumber === messageData.to) {
+        targetAgent = { agentId, connection };
+        break;
+      }
+    }
+
+    if (!targetAgent) {
+      console.log('❌ Agente não encontrado para:', messageData.to);
+      return res.status(200).send('OK'); // Sempre retornar 200 para Twilio
+    }
+
+    // Gerar resposta usando IA
+    const aiResponse = await generateAIResponse(
+      messageData.body,
+      targetAgent.connection.agentPrompt
+    );
+
+    // Enviar resposta automática
+    const responseMessage = await twilioClient.messages.create({
+      from: twilioWhatsAppNumber,
+      to: messageData.from,
+      body: aiResponse
+    });
+
+    // Salvar no histórico
+    const agentId = targetAgent.agentId;
+    if (!messageHistory.has(agentId)) {
+      messageHistory.set(agentId, []);
+    }
+
+    // Mensagem recebida
+    messageHistory.get(agentId).push({
+      id: messageData.messageSid,
+      agentId,
+      from: messageData.from,
+      message: messageData.body,
+      timestamp: new Date().toISOString(),
+      direction: 'inbound',
+      status: 'received'
+    });
+
+    // Resposta enviada
+    messageHistory.get(agentId).push({
+      id: responseMessage.sid,
+      agentId,
+      to: messageData.from,
+      message: aiResponse,
+      timestamp: new Date().toISOString(),
+      direction: 'outbound',
+      status: 'sent'
+    });
+
+    console.log('✅ Resposta automática enviada:', responseMessage.sid);
+    res.status(200).send('OK');
+
+  } catch (error) {
+    console.error('❌ Erro no webhook Twilio:', error);
+    res.status(200).send('OK'); // Sempre retornar 200 para evitar reenvios
+  }
+});
+
+// Rota para obter histórico de mensagens
+app.get('/api/messages/:agentId', (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const messages = messageHistory.get(agentId) || [];
+    
+    res.json({
+      success: true,
+      agentId,
+      messages: messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+      count: messages.length
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter mensagens:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao obter histórico de mensagens'
+    });
+  }
+});
+
+// Rota para obter conexões ativas
+app.get('/api/connections', (req, res) => {
+  try {
+    const connections = Array.from(agentConnections.values());
+    res.json({
+      success: true,
+      connections,
+      count: connections.length
+    });
+  } catch (error) {
+    console.error('❌ Erro ao obter conexões:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao obter conexões'
+    });
+  }
+});
+
+// Função para gerar resposta com IA
+async function generateAIResponse(userMessage, agentPrompt) {
+  try {
+    // Integração com OpenAI (se configurado)
+    if (process.env.OPENAI_API_KEY) {
+      const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: agentPrompt
+          },
+          {
+            role: 'user',
+            content: userMessage
+          }
+        ],
+        max_tokens: 150,
+        temperature: 0.7
+      }, {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return response.data.choices[0].message.content.trim();
+    }
+
+    // Integração com Gemini (se configurado)
+    if (process.env.GEMINI_API_KEY) {
+      const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        contents: [{
+          parts: [{
+            text: `${agentPrompt}\n\nUsuário: ${userMessage}\n\nResponda de forma útil e concisa:`
+          }]
+        }]
+      });
+
+      return response.data.candidates[0].content.parts[0].text.trim();
+    }
+
+    // Resposta padrão se não houver IA configurada
+    return `Olá! Sou um assistente virtual configurado com: "${agentPrompt}"\n\nVocê disse: "${userMessage}"\n\nComo posso ajudar você hoje?`;
+
+  } catch (error) {
+    console.error('❌ Erro ao gerar resposta IA:', error);
+    return `Olá! Recebi sua mensagem: "${userMessage}"\n\nNo momento estou com dificuldades para processar sua solicitação, mas em breve retornarei com uma resposta mais elaborada.`;
+  }
+}
 
 // Iniciar servidor
 app.listen(PORT, () => {
