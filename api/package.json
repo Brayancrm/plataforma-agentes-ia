@@ -1,0 +1,11 @@
+{
+  "name": "whatsapp-api",
+  "version": "1.0.0",
+  "description": "WhatsApp Web API oficial",
+  "main": "whatsapp-connect.js",
+  "dependencies": {
+    "whatsapp-web.js": "^1.33.2",
+    "qrcode": "^1.5.4",
+    "puppeteer": "^24.18.0"
+  }
+}
