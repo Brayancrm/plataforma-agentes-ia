@@ -146,7 +146,6 @@ const DashboardPage: React.FC = () => {
   const [showWhatsappForm, setShowWhatsappForm] = useState(false);
   const [editingWhatsappAgent, setEditingWhatsappAgent] = useState<any>(null);
   const [selectedWhatsappAgent, setSelectedWhatsappAgent] = useState<any>(null);
-  const [showWhatsappConnection, setShowWhatsappConnection] = useState(false);
 
   // Estados para Integrações OpenAI
   const [openaiConfig, setOpenaiConfig] = useState<any>({
@@ -4064,7 +4063,6 @@ const DashboardPage: React.FC = () => {
                   <button
                     onClick={() => {
                       setSelectedWhatsappAgent(agent);
-                      setShowWhatsappConnection(true);
                     }}
                     className="btn-secondary text-sm"
                   >
@@ -4220,7 +4218,6 @@ const DashboardPage: React.FC = () => {
         )}
 
         {/* Modal de conexão WhatsApp */}
-        {showWhatsappConnection && selectedWhatsappAgent && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <div className="p-4">
@@ -4228,7 +4225,6 @@ const DashboardPage: React.FC = () => {
                   <h2 className="text-xl font-bold">WhatsApp - {selectedWhatsappAgent.name}</h2>
                   <button
                     onClick={() => {
-                      setShowWhatsappConnection(false);
                       setSelectedWhatsappAgent(null);
                     }}
                     className="text-gray-500 hover:text-gray-700"
