@@ -125,7 +125,7 @@ export const useWhatsAppConnection = ({
     setError(null);
 
     try {
-      const newConnection = await WhatsAppService.connectAgent(agent);
+      const newConnection = await WhatsAppService.connectAgent(agent.id, agent.name, agent.prompt);
       setConnection(newConnection);
       
       // Inicia polling se a conexão foi criada com sucesso
