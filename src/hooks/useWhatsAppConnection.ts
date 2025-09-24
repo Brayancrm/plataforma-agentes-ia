@@ -83,12 +83,14 @@ export const useWhatsAppConnection = ({
       const interval = setInterval(async () => {
         try {
           const status = await WhatsAppService.getConnectionStatus(agentId);
-          setConnection(prevConnection => {
-            if (prevConnection) {
-              return { ...prevConnection, status: status.status, lastSeen: status.lastSeen };
-            }
-            return prevConnection;
-          });
+          if (status) {
+            setConnection(prevConnection => {
+              if (prevConnection) {
+                return { ...prevConnection, status: status.status, lastSeen: status.lastSeen };
+              }
+              return prevConnection;
+            });
+          }
         } catch (error) {
           console.error('Erro ao verificar status:', error);
         }
