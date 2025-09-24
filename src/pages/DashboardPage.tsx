@@ -4239,7 +4239,6 @@ const DashboardPage: React.FC = () => {
                   agentId={selectedWhatsappAgent.id}
                   agentName={selectedWhatsappAgent.name}
                   agentPrompt={selectedWhatsappAgent.prompt}
-                />
               </div>
             </div>
           </div>
