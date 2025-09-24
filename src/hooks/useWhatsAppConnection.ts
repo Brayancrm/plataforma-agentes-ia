@@ -78,15 +78,26 @@ export const useWhatsAppConnection = ({
   const startPolling = useCallback(() => {
     stopPolling(); // Para qualquer polling anterior
 
-    const stopPollingFn = WhatsAppService.startStatusPolling(agentId, (status) => {
-      setConnection(prevConnection => {
-        // Mantém dados existentes e atualiza com novo status
-        if (prevConnection) {
-          return { ...prevConnection, ...status };
+    // Iniciar polling de status (simulado)
+    const startPolling = () => {
+      const interval = setInterval(async () => {
+        try {
+          const status = await WhatsAppService.getConnectionStatus(agentId);
+          setConnection(prevConnection => {
+            if (prevConnection) {
+              return { ...prevConnection, status: status.status, lastSeen: status.lastSeen };
+            }
+            return prevConnection;
+          });
+        } catch (error) {
+          console.error('Erro ao verificar status:', error);
         }
-        return status;
-      });
-    });
+      }, pollingInterval);
+      
+      return () => clearInterval(interval);
+    };
+    
+    const stopPollingFn = startPolling();
 
     stopPollingRef.current = stopPollingFn;
   }, [agentId, stopPolling]);
