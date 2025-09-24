@@ -4236,11 +4236,15 @@ const DashboardPage: React.FC = () => {
                     ✕
                   </button>
                 </div>
-                <WhatsAppWebDirect
-                  agentId={selectedWhatsappAgent.id}
-                  agentName={selectedWhatsappAgent.name}
-                  agentPrompt={selectedWhatsappAgent.prompt}
-                />
+                <div className="text-center py-8">
+                  <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Configuração WhatsApp Removida
+                  </h3>
+                  <p className="text-gray-500">
+                    A funcionalidade de agente WhatsApp foi removida do sistema.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
