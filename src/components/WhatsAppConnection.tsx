@@ -8,7 +8,6 @@ import {
   Send,
   Power
 } from 'lucide-react';
-import whatsappService, { WhatsAppConnection, WhatsAppMessage } from '../services/whatsappService';
 
 interface WhatsAppConnectionProps {
   agentId: string;
