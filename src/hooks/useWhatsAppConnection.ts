@@ -1,6 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import WhatsAppService, { WhatsAppConnection } from '../services/whatsappService';
 
+interface WhatsAppAgent {
+  id: string;
+  name: string;
+  prompt: string;
+  integration: string;
+  webhookUrl?: string;
+  phoneNumber?: string;
+  autoReply: boolean;
+  typingIndicator: boolean;
+  readReceipts: boolean;
+  connection?: WhatsAppConnection;
+}
+
 interface UseWhatsAppConnectionProps {
   agentId: string;
   autoConnect?: boolean;
