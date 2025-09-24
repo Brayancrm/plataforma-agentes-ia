@@ -4236,7 +4236,6 @@ const DashboardPage: React.FC = () => {
                     ✕
                   </button>
                 </div>
-                <WhatsAppWebDirect
                   agentId={selectedWhatsappAgent.id}
                   agentName={selectedWhatsappAgent.name}
                   agentPrompt={selectedWhatsappAgent.prompt}
