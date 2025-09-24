@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../components/AuthProvider';
 import { useFirestore } from '../hooks/useFirestore';
 import { useFirebaseStorage } from '../hooks/useFirebaseStorage';
-import WhatsAppWebDirect from '../components/WhatsAppWebDirect';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import OpenAIService from '../services/openaiService';
