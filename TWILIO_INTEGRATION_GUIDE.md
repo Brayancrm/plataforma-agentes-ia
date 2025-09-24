@@ -106,7 +106,6 @@ npm start
 
 ### **Frontend**
 - `src/services/whatsappService.ts` - Integração com backend
-- `src/components/WhatsAppConnection.tsx` - Carregamento de mensagens
 
 ### **APIs Disponíveis**
 - `POST /api/twilio-whatsapp` - Ações principais (connect, send, status)
