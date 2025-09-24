@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import WhatsAppService, { WhatsAppConnection, WhatsAppAgent } from '../services/whatsappService';
+import WhatsAppService, { WhatsAppConnection } from '../services/whatsappService';
 
 interface UseWhatsAppConnectionProps {
   agentId: string;
